@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Company {
+  id         String   @id @default(cuid())
+  clerkOrgId String   @unique
+  name       String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  employees  Employee[]
+  surveys    Survey[]
+}
+
+
+model Employee {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+
+  fullName   String
+  email      String?
+  department String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([companyId, department])
+  SurveyResponse SurveyResponse[]
+}
+
+enum SurveyStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+model Survey {
+  id        String       @id @default(cuid())
+  companyId String
+  company   Company      @relation(fields: [companyId], references: [id])
+  title     String
+  status    SurveyStatus @default(DRAFT)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  questions SurveyQuestion[]
+  responses SurveyResponse[]
+
+  @@index([companyId])
+}
+
+enum QuestionType {
+  RATING // 0-10 (NPS) or 1-5 (Satisfaction)
+  TEXT
+  BOOLEAN
+}
+
+model SurveyQuestion {
+  id       String       @id @default(cuid())
+  surveyId String
+  survey   Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  text     String
+  type     QuestionType
+  order    Int          @default(0)
+
+  answers SurveyAnswer[]
+
+  @@index([surveyId])
+}
+
+model SurveyResponse {
+  id         String   @id @default(cuid())
+  surveyId   String
+  survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  submittedAt DateTime @default(now())
+
+  answers SurveyAnswer[]
+
+  @@index([surveyId])
+  @@index([employeeId])
+}
+
+model SurveyAnswer {
+  id         String         @id @default(cuid())
+  responseId String
+  response   SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId String
+  question   SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  valueString  String? // For text answers
+  valueNumber  Int?    // For rating answers
+  valueBoolean Boolean? // For boolean answers
+
+  @@index([responseId])
+  @@index([questionId])
+}
