@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/requireCompany";
-import { QuestionType, SurveyStatus } from "@prisma/client";
+import { QuestionType } from "@prisma/client";
 
 const clean = (v: FormDataEntryValue | null) =>
     typeof v === "string" ? v.trim() : "";
@@ -74,6 +74,21 @@ export async function closeSurvey(formData: FormData) {
     await prisma.survey.updateMany({
         where: { id, companyId: company.id },
         data: { status: "CLOSED" }
+    });
+
+    revalidatePath(`/dashboard/surveys/${id}`);
+    revalidatePath("/dashboard/surveys");
+}
+
+export async function activateSurvey(formData: FormData) {
+    const company = await requireCompany();
+    const id = clean(formData.get("id"));
+
+    if (!id) return;
+
+    await prisma.survey.updateMany({
+        where: { id, companyId: company.id },
+        data: { status: "ACTIVE" }
     });
 
     revalidatePath(`/dashboard/surveys/${id}`);

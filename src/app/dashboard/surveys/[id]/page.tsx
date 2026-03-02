@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/requireCompany";
-import { closeSurvey } from "../actions";
+import { closeSurvey, activateSurvey } from "../actions";
 
 export default async function SurveyDetailsPage({
     params,
@@ -66,6 +66,14 @@ export default async function SurveyDetailsPage({
                 </div>
 
                 <div className="flex gap-2">
+                    {survey.status === "DRAFT" && (
+                        <form action={activateSurvey}>
+                            <input type="hidden" name="id" value={survey.id} />
+                            <button className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600">
+                                Ativar Pesquisa
+                            </button>
+                        </form>
+                    )}
                     {survey.status === "ACTIVE" && (
                         <form action={closeSurvey}>
                             <input type="hidden" name="id" value={survey.id} />
